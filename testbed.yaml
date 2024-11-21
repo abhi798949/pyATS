@@ -1,0 +1,15 @@
+testbed:
+  name: IOS_Testbed
+  credentials:
+    default:
+      username: admin
+      password: admin
+
+devices:
+  R2:  # Match the hostname in the device prompt
+    os: iosxr
+    type: iosxr
+    connections:
+      a:
+        protocol: ssh
+        ip: 192.168.29.54
