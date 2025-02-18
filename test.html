@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Router Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+        }
+        input, select, button {
+            padding: 8px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Router Configuration</h1>
+    <form id="configForm">
+        <div class="form-group">
+            <label for="Router">Select Router</label>
+            <select id="Router" name="Router">
+                <option value="R1">R1</option>
+                <option value="R2">R2</option>
+                <option value="R3">R3</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="interface">Select Interface</label>
+            <select id="interface" name="interface">
+                <option value="Ethernet0/0">Ethernet0/0</option>
+                <option value="Ethernet0/1">Ethernet0/1</option>
+                <option value="Ethernet0/2">Ethernet0/2</option>
+                <option value="Ethernet0/3">Ethernet0/3</option>
+                <option value="Ethernet1/1">Ethernet1/1</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>IP Configuration</label>
+            <input type="radio" name="ipType" value="static" checked> Static
+            <input type="radio" name="ipType" value="dhcp"> DHCP
+        </div>
+        <div id="staticFields" class="form-group">
+            <label for="ipAddress">IP Address</label>
+            <input type="text" id="ipAddress" name="ipAddress" placeholder="192.168.1.1">
+            <label for="subnetMask">Subnet Mask</label>
+            <input type="text" id="subnetMask" name="subnetMask" placeholder="255.255.255.0">
+        </div>
+        <button type="submit">Apply Configuration</button>
+
+        <h1>OSPF Configuration</h1>
+        <div class="form-group">
+            <label for="OSPF-ID">OSPF ID</label>
+            <input type="text" id="ID" name="OSPF_ID" placeholder="1">
+            <label for="Router-ID">Router ID</label>
+            <input type="text" id="Router-ID" name="Router_ID" placeholder="1.1.1.1">
+            <label for="network">Network</label>
+            <input type="text" id="network" name="network" placeholder="192.168.1.0">
+            <label for="WildcardMask">Wildcard Mask</label>
+            <input type="text" id="WildcardMask" name="WildcardMask" placeholder="0.0.0.255">
+            <label for="area">Area</label>
+            <input type="text" id="area" name="area" placeholder="0">
+        </div>
+        <button type="submit">Apply Configuration</button>
+        
+        
+        <h1>BGP Configuration</h1>
+        <div class="form-group">
+            <label for="ASN">ASN</label>
+            <input type="text" id="ASN" name="ASN" placeholder="1">
+            <label for="router-id">router-id</label>
+            <input type="text" id="router-id" name="router-id" placeholder="1.1.1.1">
+            <label for="neighbor_IP">neighbor_IP</label>
+            <input type="text" id="neighbor_IP" name="neighbor_IP" placeholder="192.168.1.0">
+            <label for="remote_as">remote_as</label>
+            <input type="text" id="remote_as" name="remote_as" placeholder="1">
+        </div>
+        <button type="submit">Apply Configuration</button>
+    </form>
+
+    <script>
+        function getSubnetMask(ip) {
+            const firstOctet = parseInt(ip.split('.')[0]);
+            if (firstOctet <= 127) return '255.0.0.0';
+            if (firstOctet <= 191) return '255.255.0.0';
+            if (firstOctet <= 223) return '255.255.255.0';
+            return '';
+        }
+
+        function updateWildcardMask(subnetMask) {
+            if (!subnetMask) return;
+            const maskParts = subnetMask.split('.').map(Number);
+            const wildcardMask = maskParts.map(octet => 255 - octet).join('.');
+            document.getElementById('WildcardMask').value = wildcardMask;
+        }
+
+        document.getElementById('ipAddress').addEventListener('input', (e) => {
+            const ip = e.target.value.trim();
+            if (!ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
+                document.getElementById('subnetMask').value = '';
+                return;
+            }
+            const subnetMask = getSubnetMask(ip);
+            document.getElementById('subnetMask').value = subnetMask;
+            updateWildcardMask(subnetMask);
+        });
+
+        document.getElementById('network').addEventListener('input', (e) => {
+            const networkIp = e.target.value.trim();
+            if (!networkIp.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
+                document.getElementById('WildcardMask').value = '';
+                return;
+            }
+            const subnetMask = getSubnetMask(networkIp);
+            updateWildcardMask(subnetMask);
+        });
+
+        document.getElementById('subnetMask').addEventListener('input', (e) => {
+            updateWildcardMask(e.target.value);
+        });
+
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.ipType = document.querySelector('input[name="ipType"]:checked')?.value;
+            const isOSPF = data.OSPF_ID && data.Router_ID && data.network && data.WildcardMask && data.area;
+            const endpoint = isOSPF ? '/api/configure_ospf' : '/api/configure_interface';
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const responseData = await response.json();
+            alert(responseData.message || responseData.error);
+        });
+    </script>
+</body>
+</html>
+
