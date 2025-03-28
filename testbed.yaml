@@ -6,18 +6,11 @@ testbed:
       password: vayu
 
 devices:
-  R2:
+  R1:  # Match the hostname in the device prompt
     os: ios
     type: iosxe
     connections:
       a:
         protocol: ssh
-        ip: 192.168.29.2
+        ip: 192.168.29.224
 
-  R3:
-    os: ios
-    type: iosxe
-    connections:
-      a:
-        protocol: ssh
-        ip: 192.168.29.3
