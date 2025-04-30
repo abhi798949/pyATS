@@ -1,5 +1,4 @@
 from pyats.topology import loader
-
 # Load testbed
 testbed = loader.load('testbed.yaml')
 
